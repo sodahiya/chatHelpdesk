@@ -11,7 +11,7 @@ def start_server():
     server.start_server()
     start_server_button.config(text="Server is Running")
     start_server_button.config(state="disabled")
-    frame = ttk.Frame(master=window, borderwidth=10, bootstyle="info")
+    frame = ttk.Frame(master=window, borderwidth=10, bootstyle="success")
     frame.pack(fill="both", expand=True, padx=10, pady=10)
     entry = ttk.Entry(master=window)
     entry.pack(fill = "x", padx = 10, pady = 10)
