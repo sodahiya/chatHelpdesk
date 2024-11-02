@@ -7,11 +7,20 @@ ENCODER = "utf-8"
 BYTESIZE = 1024
 
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server_socket.bind((HOST_IP, HOST_PORT))
-server_socket.listen()
-
 client_socket_list = []
 client_name_dist = {}
+
+
+def start_server():
+    print(HOST_IP)
+    print("Server is Running...")
+
+    server_socket.bind((HOST_IP, HOST_PORT))
+    server_socket.listen()
+
+    connection_thread = threading.Thread(target=connect_client)
+    connection_thread.start()
+
 
 def broadcast_message(message, sender_socket=None):
     """Broadcast a message to all clients except the sender."""
@@ -61,9 +70,3 @@ def connect_client():
         # Start a new thread to handle the connected client
         threading.Thread(target=handle_client, args=(client_socket,)).start()
 
-def start_server():
-    print(HOST_IP)
-    print("Server is Running...")
-
-    connection_thread = threading.Thread(target=connect_client)
-    connection_thread.start()
