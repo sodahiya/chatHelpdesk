@@ -1,13 +1,15 @@
 import tkinter as tk
 import ttkbootstrap as ttk
-
+import client
 
 window = ttk.Window(themename="cosmo")
 window.title('HelpdeskClient')
 window.geometry('800x600')
 
 def connect_client():
-    print("Starting server")
+    client.connect_client(DEST_IP.get())
+
+    print("Connected")
     client_connect_button.config(text="Connected")
     client_connect_button.config(state="disabled")
     DEST_PORT_entry.config(state="disabled")

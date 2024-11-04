@@ -5,7 +5,7 @@ import threading
 DEST_PORT = 12345
 ENCODER = "utf-8"
 BYTESIZE = 1024
-client_name = "Soda"
+client_name = "Client"
 
 # Create and connect the socket
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

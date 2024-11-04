@@ -67,6 +67,8 @@ def connect_client():
         client_socket_list.append(client_socket)
         print(f"Connected to {address}")
 
+
+
         # Start a new thread to handle the connected client
         threading.Thread(target=handle_client, args=(client_socket,)).start()
 
