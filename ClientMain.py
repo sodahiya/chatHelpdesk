@@ -1,23 +1,55 @@
 import tkinter as tk
 import ttkbootstrap as ttk
-import client
+import simpleClient
 
 window = ttk.Window(themename="cosmo")
-window.title('HelpdeskClient')
+window.title('Helpdesk Client')
 window.geometry('800x600')
 
+chat_frame = None
+message_entry = None
+
+def display_message_server(message):
+    """Display a new message from the server in the chat frame."""
+    message_label = ttk.Label(master=chat_frame, text=f"Server : {message}", bootstyle="info")
+    message_label.pack(fill="x", padx=10, pady=5, anchor="w")
+
+def display_message_client(message):
+    """Display a new message from the client in the chat frame."""
+    message_label = ttk.Label(master=chat_frame, text=f"Client : {message}", bootstyle="secondary")
+    message_label.pack(fill="x", padx=10, pady=5, anchor="w")
+
 def connect_client():
-    client.connect_client(DEST_IP.get())
+    dest_ip = DEST_IP.get()
+    simpleClient.connect_client(dest_ip, display_message_server)  # Pass the callback
 
     print("Connected")
     client_connect_button.config(text="Connected")
     client_connect_button.config(state="disabled")
     DEST_PORT_entry.config(state="disabled")
     DEST_IP_entry.config(state="disabled")
-    frame = ttk.Frame(master=window, borderwidth=10, bootstyle="success")
-    frame.pack(fill="both", expand=True, padx=10, pady=10)
-    entry = ttk.Entry(master=window)
-    entry.pack(fill = "x", padx = 10, pady = 10)
+
+    # Initialize the chat frame for displaying messages
+    global chat_frame
+    chat_frame = ttk.Frame(master=window, borderwidth=10, bootstyle="success")
+    chat_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+    # Create the entry for sending messages
+    global message_entry
+    message_entry = ttk.Entry(master=window)
+    message_entry.pack(fill="x", padx=10, pady=10)
+
+    send_button = ttk.Button(master=window, text="Send", command=lambda: send_message(message_entry.get()), bootstyle="primary")
+    send_button.pack(side="left", padx=10)
+
+    # Bind the Return key to the send_message function
+    message_entry.bind("<Return>", lambda event: send_message(message_entry.get()))  # Call send_message on Enter key press
+
+def send_message(message):
+    if message:
+        simpleClient.send_message(message)
+        display_message_client(message)
+        message_entry.delete(0, tk.END)  # Clear the entry box
 
 header_label = ttk.Label(
     master=window,
@@ -31,17 +63,18 @@ connect_frame = ttk.Frame(master=window, borderwidth=10)
 connect_frame.pack()
 
 DEST_IP = tk.StringVar(value="IP ADDRESS")
-DEST_IP_entry = ttk.Entry(master=connect_frame,textvariable=DEST_IP)
-DEST_IP_entry.pack(side = "left",padx = 10, pady = 10)
+DEST_IP_entry = ttk.Entry(master=connect_frame, textvariable=DEST_IP)
+DEST_IP_entry.pack(side="left", padx=10, pady=10)
 
-label = ttk.Label(master=connect_frame,text=":")
-label.pack(side = "left",padx = 10, pady = 10)
+label = ttk.Label(master=connect_frame, text=":")
+label.pack(side="left", padx=10, pady=10)
 
-DEST_PORT = tk.StringVar(value="PORT")
-DEST_PORT_entry = ttk.Entry(master=connect_frame,textvariable=DEST_PORT)
-DEST_PORT_entry.pack(side = "left",padx = 10, pady = 10)
+DEST_PORT = tk.StringVar(value="12345")
+DEST_PORT_entry = ttk.Entry(master=connect_frame, textvariable=DEST_PORT)
+DEST_PORT_entry.pack(side="left", padx=10, pady=10)
 
-client_connect_button = ttk.Button(master=connect_frame,width=20, text='Connect',command=connect_client,bootstyle = "success-outline")
-client_connect_button.pack(side = "left",pady = 10)
+client_connect_button = ttk.Button(master=connect_frame, width=20, text='Connect', command=connect_client, bootstyle="success-outline")
+client_connect_button.pack(side="left", pady=10)
 
+# Start the main event loop
 window.mainloop()

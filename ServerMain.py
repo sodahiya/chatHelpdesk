@@ -1,121 +1,67 @@
 import tkinter as tk
 import ttkbootstrap as ttk
-import server
+import threading
+import simpleServer
 
 window = ttk.Window(themename="cosmo")
-window.title('Helpdesk')
+window.title('Helpdesk Server')
 window.geometry('800x600')
 
-containerFrame = ttk.Frame(master=window)
-tabsControl = ttk.Notebook(window)
+#Global Variables
+chat_frame = None
+client_socket = None
 
 def start_server():
-    global containerFrame
-    print("Starting server")
-    server.start_server()
-    start_server_button.config(text="Server is Running")
-    start_server_button.config(state="disabled")
-    tabsControl.pack(expand=1, fill="both")
-    containerFrame = ttk.Frame(master=tabsControl)
+    print("Starting server...")
+    start_server_button.config(text = "Server is Running", state = "disabled")
+
+    global chat_frame
+    chat_frame = ttk.Frame(master = window, width = 400, height = 150, bootstyle = "success")
+    chat_frame.pack(fill = "both", expand = True, padx = 10, pady = 10)
 
 
-header_label = ttk.Label(
-    master=window,
-    text="Helpdesk\nServer Control Panel",
-    font=("Helvetica", 24, "bold"),
-    bootstyle="dark"
-)
-header_label.pack(pady=30)
+    send_frame = ttk.Frame(master=window)
+    send_frame.pack(fill="x", padx=10, pady=10)
+    global chat_entry
+    chat_entry = ttk.Entry(master=send_frame)
+    chat_entry.pack(side="left", fill="x", expand=True, padx=10)
+    chat_entry.bind("<Return>", lambda event: send_message())
 
 
-start_server_button = ttk.Button(master=window,width=20, text='Start Server',command=start_server,bootstyle = "success-outline")
+    send_button = ttk.Button(master=send_frame, text="Send",command=send_message, bootstyle="primary")
+    send_button.pack(side="left", padx=10)
+
+    simpleServer.set_message_callback(display_message_client)
+
+    #run the server in a separate thread
+    server_thread = threading.Thread(target=start_server_thread)
+    server_thread.daemon = True #this closes the thread when the window closes
+    server_thread.start()
+
+def start_server_thread():
+    global client_socket
+    client_socket = simpleServer.start_server()
+
+def send_message():
+    message = chat_entry.get()
+    if message and client_socket:
+        simpleServer.send_message(client_socket, message)
+        display_message_server(message)
+        chat_entry.delete(0, tk.END)
+
+def display_message_client(message):
+    message_label = ttk.Label(master=chat_frame, text=f"Client : {message}", bootstyle="info")
+    message_label.pack(fill="x", padx=10, pady=5, anchor="w")
+
+def display_message_server(message):
+    message_label = ttk.Label(master=chat_frame, text=f"Server : {message}", bootstyle="secondary")
+    message_label.pack(fill="x", padx=10, pady=5, anchor="w")
+
+header_label = ttk.Label(master = window, text = "Helpdesk\nServer Control Panel", font = ("Helvetica", 24, "bold"), bootstyle = "dark")
+header_label.pack(pady = 30)
+
+start_server_button = ttk.Button(master = window, text = "Start Server", command = start_server, bootstyle = "success-outline")
 start_server_button.pack(pady = 10)
 
 
 window.mainloop()
-
-
-
-################################################################################################################
-
-import socket
-import threading
-
-HOST_IP = socket.gethostbyname(socket.gethostname())
-HOST_PORT = 12345
-ENCODER = "utf-8"
-BYTESIZE = 1024
-
-server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client_socket_list = []
-client_name_dist = {}
-
-
-def start_server():
-    print(HOST_IP)
-    print("Server is Running...")
-
-    server_socket.bind((HOST_IP, HOST_PORT))
-    server_socket.listen()
-
-    connection_thread = threading.Thread(target=connect_client)
-    connection_thread.start()
-
-
-def broadcast_message(message, sender_socket=None):
-    """Broadcast a message to all clients except the sender."""
-    for client in client_socket_list:
-        if client != sender_socket:  # Avoid echoing back to the sender
-            client.send(message.encode(ENCODER))
-
-def handle_client(client_socket):
-    """Receives messages from a client and handles them."""
-    # Receive the client name from the client
-    client_name = client_socket.recv(BYTESIZE).decode(ENCODER)
-    client_name_dist[client_socket] = client_name  # Store the name
-
-    welcome_message = f"{client_name} has joined the chat."
-    print(welcome_message)
-    broadcast_message(welcome_message, client_socket)
-
-    while True:
-        try:
-            message = client_socket.recv(BYTESIZE).decode(ENCODER)
-            if not message or message.lower() == "quit":
-                leave_message = f"{client_name} has left the chat."
-                print(leave_message)
-                broadcast_message(leave_message, client_socket)
-                client_socket_list.remove(client_socket)
-                client_socket.close()
-                break
-
-            print(f"{message}")
-            broadcast_message(f"{message}", client_socket)
-        except ConnectionResetError:
-            # Handle abrupt disconnections
-            leave_message = f"{client_name} has unexpectedly disconnected."
-            print(leave_message)
-            broadcast_message(leave_message, client_socket)
-            client_socket_list.remove(client_socket)
-            client_socket.close()
-            break
-
-def connect_client():
-    """Accepts new clients and starts a thread for each one."""
-    while True:
-        client_socket, address = server_socket.accept()
-        client_socket_list.append(client_socket)
-        print(f"Connected to {address}")
-
-        frame = ttk.Frame(master=containerFrame, borderwidth=10, bootstyle="success")
-        frame.pack(fill="both", expand=True, padx=10, pady=10)
-        entry = ttk.Entry(master=containerFrame)
-        entry.pack(fill="x", padx=10, pady=10)
-        tabsControl.add(containerFrame, text="Server")
-
-        # Start a new thread to handle the connected client
-        threading.Thread(target=handle_client, args=(client_socket,)).start()
-
-
-
-
