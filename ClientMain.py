@@ -35,15 +35,17 @@ def connect_client():
     chat_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
     # Create the entry for sending messages
+    send_frame = ttk.Frame(master=window)
+    send_frame.pack(fill="x", padx=10, pady=10)
     global message_entry
-    message_entry = ttk.Entry(master=window)
-    message_entry.pack(fill="x", padx=10, pady=10)
+    message_entry = ttk.Entry(master=send_frame)
+    message_entry.pack(side = "left",fill="x",expand = True, padx=10)
+    message_entry.bind("<Return>", lambda event: send_message(message_entry.get()))  # Call send_message on Enter key press
 
-    send_button = ttk.Button(master=window, text="Send", command=lambda: send_message(message_entry.get()), bootstyle="primary")
+    send_button = ttk.Button(master=send_frame, text="Send", command=lambda: send_message(message_entry.get()), bootstyle="primary")
     send_button.pack(side="left", padx=10)
 
     # Bind the Return key to the send_message function
-    message_entry.bind("<Return>", lambda event: send_message(message_entry.get()))  # Call send_message on Enter key press
 
 def send_message(message):
     if message:
