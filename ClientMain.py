@@ -8,16 +8,22 @@ window.geometry('800x600')
 
 chat_frame = None
 message_entry = None
+canvas = None
+scrollbar = None
 
 def display_message_server(message):
     """Display a new message from the server in the chat frame."""
-    message_label = ttk.Label(master=chat_frame, text=f"Server : {message}", bootstyle="info")
+    message_label = ttk.Label(master=chat_message_frame, text=f"Server : {message}", bootstyle="info")
     message_label.pack(fill="x", padx=10, pady=5, anchor="w")
+    # Auto-scroll to the bottom
+    canvas.yview_moveto(1)
 
 def display_message_client(message):
     """Display a new message from the client in the chat frame."""
-    message_label = ttk.Label(master=chat_frame, text=f"Client : {message}", bootstyle="secondary")
+    message_label = ttk.Label(master=chat_message_frame, text=f"Client : {message}", bootstyle="secondary")
     message_label.pack(fill="x", padx=10, pady=5, anchor="w")
+    # Auto-scroll to the bottom
+    canvas.yview_moveto(1)
 
 def connect_client():
     dest_ip = DEST_IP.get()
@@ -30,22 +36,41 @@ def connect_client():
     DEST_IP_entry.config(state="disabled")
 
     # Initialize the chat frame for displaying messages
-    global chat_frame
-    chat_frame = ttk.Frame(master=window, borderwidth=10, bootstyle="success")
+    global chat_frame, chat_message_frame, canvas, scrollbar
+    chat_frame = ttk.Frame(master=window, borderwidth=10)
     chat_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
-    # Create the entry for sending messages
+    canvas = tk.Canvas(chat_frame)
+    scrollbar = ttk.Scrollbar(chat_frame, orient="vertical", command=canvas.yview)
+    scrollable_frame = ttk.Frame(canvas)
+
+    # Configure scrolling
+    scrollable_frame.bind(
+        "<Configure>",
+        lambda e: canvas.configure(
+            scrollregion=canvas.bbox("all")
+        )
+    )
+
+    canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+    canvas.configure(yscrollcommand=scrollbar.set)
+
+    canvas.pack(side="left", fill="both", expand=True)
+    scrollbar.pack(side="right", fill="y")
+
+    # Make the scrollable frame available for message display
+    chat_message_frame = scrollable_frame
+
+    # Input and Send Button
     send_frame = ttk.Frame(master=window)
     send_frame.pack(fill="x", padx=10, pady=10)
     global message_entry
     message_entry = ttk.Entry(master=send_frame)
-    message_entry.pack(side = "left",fill="x",expand = True, padx=10)
+    message_entry.pack(side="left", fill="x", expand=True, padx=10)
     message_entry.bind("<Return>", lambda event: send_message(message_entry.get()))  # Call send_message on Enter key press
 
     send_button = ttk.Button(master=send_frame, text="Send", command=lambda: send_message(message_entry.get()), bootstyle="primary")
     send_button.pack(side="left", padx=10)
-
-    # Bind the Return key to the send_message function
 
 def send_message(message):
     if message:
